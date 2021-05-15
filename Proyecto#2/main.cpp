@@ -38,6 +38,7 @@ void imprimir_limpio()
         }
     }
     cout<<"****************"<<'\n';
+    cout<<'\n';
 }
 void entradas()
 {
@@ -82,7 +83,7 @@ void imprimir_original()
     puts(generadores);
     cout<<"Simbolos terminales: ";
     puts(terminales);
-    cout<<"************************"<<'\n';
+    cout<<"************************"<<'\n'<<'\n';
     cout<<"Gramatica original"<<'\n';
     cout<<"************************"<<'\n';
     for (int i=0;i<n_generadores;i++){
@@ -478,18 +479,47 @@ void fng()
     }
 }
 
+void automata_pila()
+{
+    cout<<"****************"<<'\n';
+    cout<<"Automata de Pila"<<'\n';
+    cout<<"****************"<<'\n';
+    cout<<"Donde Z es el simbolo inicial de la pila"<<'\n';
+
+    cout<<"De q0 a q1: "<<'\n'<<"E,Z / SZ"<<'\n';
+    cout<<"De q1 a q2: "<<'\n';
+
+    for (int a=0;a<n_generadores;a++)
+    {
+        if (producciones[a].encontrado || producciones[a].soy_FNG)
+        {
+            char generado = producciones[a].generador;
+            for (int j=0;j<producciones[a].num_simbolos;j++)
+            {
+                char init = producciones[a].simbolos[j].at(0);
+                string subs = producciones[a].simbolos[j].substr(1);
+                cout<<init<<","<<generado<<"/ "<<subs<<'\n';
+            }
+        }
+    }
+    cout<<"De q1 a q2: "<<'\n'<<"E,Z / E"<<'\n';
+}
+
 int main()
 {
     entradas();
+    cout<<'\n';
     imprimir_original();
     limpieza_inicial(producciones[0].generador);
     segunda_limpieza();
+    cout<<"Primera reduccion"<<'\n'<<"****************"<<'\n';
     imprimir_limpio();
     chomsky();
-    cout<<"Forma Normal de Chomsky"<<'\n'<<"*************"<<'\n';
+    cout<<"Forma Normal de Chomsky"<<'\n'<<"****************"<<'\n';
     imprimir_limpio();
-    cout<<"Forma Normal de Greibach"<<'\n'<<"*************"<<'\n';
+    cout<<"Forma Normal de Greibach"<<'\n'<<"****************"<<'\n';
     fng();
     imprimir_limpio();
+    automata_pila();
     return 0;
 }
