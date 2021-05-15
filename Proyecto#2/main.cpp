@@ -5,22 +5,40 @@ using namespace std;
 char generadores[1002];
 char terminales[1002];
 char nuevo_generador;
-int opcionales[18] = {128,129,132,133,135,136,137,138,139,140,141,142,145,146,155,225,230,245};
+int opcionales[18] = {129,132,133,135,136,137,138,139,140,141,142,145,146,155,225,230,245};
 int n_generadores;
 int opcion_ocupada;
 
 map <char,int> indices;
 map <char,bool> existe_terminal;
 
+queue <int> posiciones_sustituir;
+
 struct produccion{
     char generador;
     string simbolos[1002];
     int num_simbolos;
     bool encontrado;
+    bool soy_FNG;
 };
 
 produccion producciones[1002];
 
+void imprimir_limpio()
+{
+    for (int i=0;i<n_generadores;i++){
+        if (producciones[i].encontrado)
+        {
+            cout<<producciones[i].generador<<"->";
+            for (int j=0;j<producciones[i].num_simbolos;j++)
+            {
+                cout<<producciones[i].simbolos[j]<<"|";
+            }
+            cout<<'\n';
+        }
+    }
+    cout<<"****************"<<'\n';
+}
 void entradas()
 {
     gets(generadores);
@@ -64,7 +82,9 @@ void imprimir_original()
     puts(generadores);
     cout<<"Simbolos terminales: ";
     puts(terminales);
-    cout<<"***Gramatica original***"<<'\n';
+    cout<<"************************"<<'\n';
+    cout<<"Gramatica original"<<'\n';
+    cout<<"************************"<<'\n';
     for (int i=0;i<n_generadores;i++){
         cout<<producciones[i].generador<<"->";
         for (int j=0;j<producciones[i].num_simbolos;j++){
@@ -80,6 +100,7 @@ void limpieza_inicial(char genera)
     int pos_indice = indices[genera];
     int aux_numSimbolos = producciones[pos_indice].num_simbolos;
     producciones[pos_indice].encontrado = true;
+    producciones[pos_indice].soy_FNG = false;
 
     for (int i=0;i<aux_numSimbolos;i++)
     {
@@ -311,20 +332,150 @@ void chomsky()
     }
 }
 
-void imprimir_limpio()
+void sustitucion_fng(int a, int i,int indice_aux)
 {
-    for (int i=0;i<n_generadores;i++){
-        if (producciones[i].encontrado)
+     int indice_sustituir = indices[producciones[a].simbolos[i].at(0)];
+     int pos = i;
+     string aux_2;
+     for (int j=1;j<producciones[a].simbolos[i].size();j++){
+            aux_2+=producciones[a].simbolos[i].at(j);
+     }
+
+     int posicion = producciones[indice_sustituir].num_simbolos;
+     produccion aux_produccion = producciones[a];
+     for (int j=1;j<producciones[a].num_simbolos;j++)
+     {
+         producciones[a].simbolos[posicion] = aux_produccion.simbolos[j];
+         posicion++;
+     }
+     producciones[a].num_simbolos = (producciones[a].num_simbolos + producciones[indice_sustituir].num_simbolos)-1;
+
+     for (int j=0;j<producciones[indice_sustituir].num_simbolos;j++)
+     {
+       string aux = producciones[indice_sustituir].simbolos[j];
+       aux+=aux_2;
+       producciones[a].simbolos[pos] = aux;
+       pos++;
+     }
+}
+
+void fng()
+{
+    //Paso 1. Sustitucion y Reflexion
+    for (int a=0;a<n_generadores;a++)
+    {
+        int genera_indice = indices[producciones[a].generador];
+        int aux_numSimbolos = producciones[a].num_simbolos;
+        if (producciones[a].encontrado && !producciones[a].soy_FNG)
         {
-            cout<<producciones[i].generador<<"->";
-            for (int j=0;j<producciones[i].num_simbolos;j++)
+            for (int i=0;i<aux_numSimbolos;i++)
             {
-                cout<<producciones[i].simbolos[j]<<"|";
+                if (!existe_terminal[producciones[a].simbolos[i].at(0)])
+                {
+                    int indice_aux = indices[producciones[a].simbolos[i].at(0)];
+                    if (genera_indice>indice_aux)
+                    {
+                        //aplicamos sustitución
+                        sustitucion_fng(a,i,indice_aux);
+                        fng();
+                    }
+                    else if (genera_indice==indice_aux)
+                    {
+                        string alfa[15];
+                        string beta[15];
+                        int pos_alfa = 0;
+                        int pos_beta = 0;
+                        for (int j=0;j<producciones[a].num_simbolos;j++)
+                        {
+                            if (existe_terminal[producciones[a].simbolos[j].at(0)])
+                            {
+                                beta[pos_beta] = producciones[a].simbolos[j];
+                                pos_beta++;
+                            }
+                            else
+                            {
+                                string aux;
+                                for (int k=1;k<producciones[a].simbolos[j].size();k++){
+                                    aux+=producciones[a].simbolos[j].at(k);
+                                }
+                                alfa[pos_alfa]=aux;
+                                pos_alfa++;
+                            }
+                        }
+                        int aux = producciones[a].num_simbolos;
+                        for (int j=0;j<aux;j++){
+                            producciones[a].simbolos[j].erase();
+                        }
+                        producciones[a].num_simbolos = 0;
+                        int aux_pos = 0;
+                        for (int j=0;j<pos_beta*2;j+=2)
+                        {
+                            char op = opcionales[opcion_ocupada];
+                            producciones[a].simbolos[j] = beta[aux_pos];
+                            producciones[a].simbolos[j+1] = beta[aux_pos]+op;
+                            producciones[a].num_simbolos+=2;
+                            aux_pos++;
+                        }
+                        aux_pos = 0;
+                        for (int j=0;j<pos_alfa*2;j+=2)
+                        {
+                            char op = opcionales[opcion_ocupada];
+                            producciones[n_generadores].simbolos[j] = alfa[aux_pos];
+                            producciones[n_generadores].simbolos[j+1] = alfa[aux_pos]+op;
+                            producciones[n_generadores].num_simbolos+=2;
+                            aux_pos++;
+                        }
+                        producciones[n_generadores].generador = opcionales[opcion_ocupada];
+                        producciones[n_generadores].encontrado = true;
+                        producciones[n_generadores].soy_FNG = true;
+                        posiciones_sustituir.push(n_generadores);
+                        opcion_ocupada++;
+                        n_generadores++;
+                        fng();
+                    }
+                }
             }
-            cout<<'\n';
         }
     }
-    cout<<"****************"<<'\n';
+
+    int susti = posiciones_sustituir.front();
+
+    //Paso 2. Sustitucion resto de elementos
+    for (int a=susti-1;a>=0;a--)
+    {
+        int genera_indice = indices[producciones[a].generador];
+        int aux_numSimbolos = producciones[a].num_simbolos;
+        if (producciones[a].encontrado && !producciones[a].soy_FNG)
+        {
+            for (int i=0;i<aux_numSimbolos;i++)
+            {
+                if (!existe_terminal[producciones[a].simbolos[i].at(0)])
+                {
+                    int indice_aux = indices[producciones[a].simbolos[i].at(0)];
+                    //aplicamos sustitución
+                    sustitucion_fng(a,i,indice_aux);
+                }
+            }
+        }
+    }
+    //Paso 3. Sustitucion en las Zn
+    for (int a=n_generadores-1;a>=0;a--)
+    {
+        int genera_indice = indices[producciones[a].generador];
+        int aux_numSimbolos = producciones[a].num_simbolos;
+        if (producciones[a].soy_FNG)
+        {
+            for (int i=0;i<aux_numSimbolos;i++)
+            {
+                if (!existe_terminal[producciones[a].simbolos[i].at(0)])
+                {
+                    int indice_aux = indices[producciones[a].simbolos[i].at(0)];
+                    //aplicamos sustitución
+                    sustitucion_fng(a,i,indice_aux);
+                }
+            }
+        }
+    }
 }
 
 int main()
@@ -336,6 +487,9 @@ int main()
     imprimir_limpio();
     chomsky();
     cout<<"Forma Normal de Chomsky"<<'\n'<<"*************"<<'\n';
+    imprimir_limpio();
+    cout<<"Forma Normal de Greibach"<<'\n'<<"*************"<<'\n';
+    fng();
     imprimir_limpio();
     return 0;
 }
