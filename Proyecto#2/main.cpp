@@ -1,3 +1,7 @@
+//Lizbeth Ortiz Lopez
+//A00227346
+//COnvertidor de GLC
+
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -129,15 +133,12 @@ void segunda_limpieza()
                 int len_string = producciones[a].simbolos[i].size();
                 for (int j=0;j<len_string;j++)
                 {
-                    bool bandera = false;
                     int aux_indice = indices[producciones[a].simbolos[i].at(j)];
                     if (producciones[aux_indice].num_simbolos==1 && producciones[aux_indice].simbolos[0].size()==1){
-                        if (existe_terminal[producciones[aux_indice].simbolos[0].at(0)]){
+                        if (existe_terminal[producciones[aux_indice].simbolos[0].at(0)]|| producciones[aux_indice].simbolos[0].at(0)=='E'){
                             producciones[a].simbolos[i].at(j) = producciones[aux_indice].simbolos[0].at(0);
                             producciones[aux_indice].encontrado = false;
-                            bandera = true;
                         }
-                        if (bandera) continue;
                     }
                     if (producciones[a].simbolos[i].at(j)=='E'){
                         producciones[a].num_simbolos = 1;
@@ -165,8 +166,7 @@ void segunda_limpieza()
                     {
                         for (int k=0;k<producciones[aux_indice].simbolos[0].size();k++)
                         {
-                            if (existe_terminal[producciones[aux_indice].simbolos[0].at(k)])
-                            {
+                            if (existe_terminal[producciones[aux_indice].simbolos[0].at(k)]){
                                 cont++;
                             }
                         }
@@ -204,98 +204,58 @@ void evaluar(int len_string,int a, int i)
 {
     string aux;
     string aux2;
-    string fin_simbolo;
     int pos = 0;
     int secciones = 0;
+    string fin_simbolo;
 
-    if (len_string==1) //to do esta popó de bebé apestoso
+    for (int j=0;j<len_string;j++)
     {
-        /*int aux_indice = indices[producciones[a].simbolos[i].at(0)];
-        int pos_aux = producciones[a].num_simbolos - 1;
-        for (int j=0;j<producciones[aux_indice].num_simbolos;j++)
-        {
-            cout<<"yo soy el simbolo a insertar en "<<j<<" : "<<producciones[aux_indice].simbolos[j]<<'\n';
-            producciones[a].simbolos[pos_aux] = producciones[aux_indice].simbolos[j];
-            producciones[a].num_simbolos++;
+        bool genera = false;
+        fin_simbolo+=producciones[a].simbolos[i].at(j);
+        int aux_indice = indices[producciones[a].simbolos[i].at(j)];
+        if (producciones[aux_indice].encontrado){
+            genera = true;
         }
-        producciones[a].num_simbolos--;
-        producciones[aux_indice].encontrado = false;*/
-
-        /*int aux_indice = indices[producciones[a].simbolos[i].at(0)];
-        for (int j=0;j<producciones[aux_indice].num_simbolos;j++)
+        if (genera)
         {
-            int len_aux = producciones[aux_indice].simbolos[0].size();
-            if (len_aux % 2 ==0) secciones = len_aux /2;
-            else secciones = (len_aux/2)+1;
+            aux.erase();
+            aux+= producciones[a].simbolos[i].at(j);
+            pos = j+1;
+            for (int k=pos;k<len_string;k++)
+            {
+                int aux_indice2 = indices[producciones[a].simbolos[i].at(k)];
+                if (producciones[aux_indice].encontrado)
+                {
+                    aux+= producciones[a].simbolos[i].at(k);
+                    if(checar(aux, producciones[a].generador))
+                    {
+                        fin_simbolo.pop_back();
+                        fin_simbolo+=nuevo_generador;
 
+                        for (int l=k+1;l<len_string;l++)
+                        {
+                            fin_simbolo+=producciones[a].simbolos[i].at(l);
+                        }
+                        producciones[a].simbolos[i] = fin_simbolo;
+                        j++;
+                    }
+                    pos++;
+                }
+            }
+        }
+        else
+        {
             producciones[n_generadores].generador = char(opcionales[opcion_ocupada]);
             producciones[n_generadores].encontrado = true;
             indices[opcionales[opcion_ocupada]] = n_generadores;
             opcion_ocupada++;
-
-            for (int k=len_aux/2;k<len_aux;k++)
+            int indicador = 0;
+            for (int k=j+1;k<len_string;k++)
             {
-                aux+=producciones[aux_indice].simbolos[0].at(k);
+                producciones[n_generadores].simbolos[indicador].at(k-1) = producciones[a].simbolos[i].at(k);
+                indicador++;
             }
-            producciones[n_generadores].simbolos[0] = aux;
-            aux.erase();
-            aux = producciones[aux_indice].simbolos[0];
-            for (int k=0;k<len_aux/2;k++){
-                aux.pop_back();
-            }
-            producciones[aux_indice].simbolos[0] = aux;
             n_generadores++;
-        }*/
-    }
-    else //tu si sirves, guapo
-    {
-        for (int j=0;j<len_string;j++)
-        {
-            bool genera = false;
-            fin_simbolo+=producciones[a].simbolos[i].at(j);
-            int aux_indice = indices[producciones[a].simbolos[i].at(j)];
-            if (producciones[aux_indice].encontrado){
-                genera = true;
-            }
-            if (genera)
-            {
-                aux.erase();
-                aux+= producciones[a].simbolos[i].at(j);
-                pos = j+1;
-                for (int k=pos;k<len_string;k++)
-                {
-                    int aux_indice2 = indices[producciones[a].simbolos[i].at(k)];
-                    if (producciones[aux_indice].encontrado)
-                    {
-                        aux+= producciones[a].simbolos[i].at(k);
-                        if(checar(aux, producciones[a].generador))
-                        {
-                            fin_simbolo.pop_back();
-                            fin_simbolo+=nuevo_generador;
-
-                            for (int l=k+1;l<len_string;l++)
-                            {
-                                fin_simbolo+=producciones[a].simbolos[i].at(l);
-                            }
-                            producciones[a].simbolos[i] = fin_simbolo;
-                            j++;
-                        }
-                        pos++;
-                    }
-                }
-            }
-            else
-            {
-                producciones[n_generadores].generador = char(opcionales[i]);
-                producciones[n_generadores].encontrado = true;
-                indices[opcionales[i]] = n_generadores;
-                int indicador = 0;
-                for (int k=j+1;k<len_string;k++)
-                {
-                    producciones[n_generadores].simbolos[indicador].at(k) = producciones[a].simbolos[i].at(j);
-                }
-                n_generadores++;
-            }
         }
     }
 }
@@ -429,6 +389,7 @@ void fng()
                         producciones[n_generadores].generador = opcionales[opcion_ocupada];
                         producciones[n_generadores].encontrado = true;
                         producciones[n_generadores].soy_FNG = true;
+                        indices[opcionales[opcion_ocupada]] = n_generadores;
                         posiciones_sustituir.push(n_generadores);
                         opcion_ocupada++;
                         n_generadores++;
@@ -498,6 +459,7 @@ void automata_pila()
             {
                 char init = producciones[a].simbolos[j].at(0);
                 string subs = producciones[a].simbolos[j].substr(1);
+                if (subs.empty()) subs = 'E';
                 cout<<init<<","<<generado<<"/ "<<subs<<'\n';
             }
         }
